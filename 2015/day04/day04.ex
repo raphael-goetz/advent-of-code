@@ -1,3 +1,5 @@
+# https://adventofcode.com/2015/day/4
+
 input = "ckczppom"
 
 defmodule Aoc.Day04 do

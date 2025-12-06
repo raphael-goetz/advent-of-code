@@ -1,3 +1,5 @@
+# https://adventofcode.com/2015/day/5
+
 defmodule Aoc.Day05 do
   def read_file(path) do
     case File.read(path) do
@@ -10,7 +12,7 @@ defmodule Aoc.Day05 do
     end
   end
 
-  def is_nice?(word) do
+  def vowels?(word) do
     collected_vowels =
       word
       |> String.to_charlist()
@@ -24,50 +26,99 @@ defmodule Aoc.Day05 do
       end)
 
     if collected_vowels < 3 do
-      IO.puts("Not enogth vowels")
-      false
-    end
-
-    last_char = -1 
-    collected_double = false
-
-    word
-    |> String.to_charlist()
-    |> Enum.each(fn x ->
-      IO.inspect(x)
-      IO.inspect(last_char)
-
-      if last_char == x do
-        IO.puts("Found Duplicate")
-        collected_double = true
-      end
-
-      last_char = x
-    end)
-
-    if !collected_double do
-      IO.puts("No doubles")
-      false
-    end
-
-    detected_forbidden = false
-
-    ["ab", "cd", "pq", "xy"]
-    |> Enum.each(fn fbdn ->
-      if String.contains?(word, fbdn) do
-        detected_forbidden = true
-      end
-    end)
-
-    if detected_forbidden do
-      IO.puts("Detected Forbidden")
       false
     else
-      IO.puts("Word is nice")
       true
     end
+  end
+
+  defp forbidden?(word) do
+    collected_forbidden =
+      ["ab", "cd", "pq", "xy"]
+      |> Enum.reduce(0, fn
+        fbdn, acc ->
+          if String.contains?(word, fbdn) do
+            acc + 1
+          else
+            acc
+          end
+      end)
+
+    if collected_forbidden > 0 do
+      true
+    else
+      false
+    end
+  end
+
+  defp has_double?(word) do
+    word
+    |> String.to_charlist()
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.any?(fn [a, b] -> a == b end)
+  end
+
+  def is_nice_p1?(word) do
+    vowels?(word) and not forbidden?(word) and has_double?(word)
+  end
+
+  # Cound't solve this by myself :(
+
+  defp has_repeating_pair?(word) do
+    len = byte_size(word)
+
+    if len < 4 do
+      false
+    else
+      0..(len - 2)
+      |> Enum.reduce_while(%{}, fn i, seen ->
+        pair = binary_part(word, i, 2)
+
+        case Map.fetch(seen, pair) do
+          {:ok, first_i} when i - first_i >= 2 ->
+            {:halt, true}
+
+          :error ->
+            {:cont, Map.put(seen, pair, i)}
+
+          {:ok, _first_i} ->
+            {:cont, seen}
+        end
+      end)
+      |> case do
+        true -> true
+        _ -> false
+      end
+    end
+  end
+
+  defp repeat?(word) do
+    word
+    |> String.to_charlist()
+    |> Enum.chunk_every(3, 1, :discard)
+    |> Enum.any?(fn [a, _, c] ->
+      a == c
+    end)
+  end
+
+  def is_nice_p2?(word) do
+    has_repeating_pair?(word) and repeat?(word)
   end
 end
 
 input = Aoc.Day05.read_file("./day05.txt") |> IO.inspect()
-"ugknbfddgicrmopn" |> Aoc.Day05.is_nice?() |> IO.inspect()
+
+# Part 1
+input
+|> Enum.map(fn x -> Aoc.Day05.is_nice_p1?(x) end)
+|> Enum.filter(fn x -> x end)
+|> Enum.count()
+|> IO.inspect()
+
+# Part 2
+input
+|> Enum.map(fn x -> Aoc.Day05.is_nice_p2?(x) end)
+|> Enum.filter(fn x -> x end)
+|> Enum.count()
+|> IO.inspect()
+
